@@ -1,0 +1,6 @@
+@AstroFarm.Api_HostAddress = http://localhost:5104
+
+GET {{AstroFarm.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
