@@ -1,0 +1,46 @@
+﻿name: astrofarm
+
+networks:
+  astrofarm-network:
+    driver: bridge
+
+volumes:
+  astrofarm_oracle_data:
+
+services:
+  db-oracle:
+    image: gvenzl/oracle-free:slim
+    container_name: oracle-rm562012
+    restart: unless-stopped
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_ROOT_PASSWORD}
+      APP_USER: ${ORACLE_APP_USER}
+      APP_USER_PASSWORD: ${ORACLE_APP_PASSWORD}
+    volumes:
+      - astrofarm_oracle_data:/opt/oracle/oradata
+    networks:
+      - astrofarm-network
+    ports:
+      - "1521:1521"
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh" ]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+
+  astrofarm-api:
+    build: .
+    container_name: api-rm562012
+    restart: unless-stopped
+    depends_on:
+      db-oracle:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__OracleConnection: "Data Source=db-oracle:1521/FREEPDB1;User Id=${ORACLE_APP_USER};Password=${ORACLE_APP_PASSWORD};"
+    ports:
+      - "8080:8080"
+    networks:
+      - astrofarm-network
