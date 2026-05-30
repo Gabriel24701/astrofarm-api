@@ -9,9 +9,6 @@ namespace AstroFarm.Api.Data
 
         public DbSet<Produtor> Produtores { get; set; }
         public DbSet<Propriedade> Propriedades { get; set; }
-        // Adicione as linhas abaixo
-        public DbSet<LeituraSatelital> Leituras { get; set; }
-        public DbSet<Alerta> Alertas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
