@@ -53,14 +53,23 @@ A plataforma foi projetada com foco em:
 - **Operabilidade** — deploy automatizado em nuvem Azure via IaC (Infrastructure as Code)
 - **Developer Experience** — documentação interativa via Swagger UI
 
-> **Nota sobre a IoT:** A placa **ESP32** opera de forma autônoma e isolada, sem comunicação direta com esta API. Os dados de telemetria do dispositivo são processados localmente na borda (edge computing). Esta API gerencia exclusivamente o domínio de **Produtores** e **Propriedades**.
+> **Nota sobre a IoT:** A placa **ESP32** opera de forma autônoma e isolada, sem comunicação direta com esta API. Os dados de telemetria do dispositivo são processados localmente na borda (edge computing). Esta API gerencia o domínio completo de **Produtores**, **Propriedades** e, a partir desta versão, também os dados de telemetria agrícola via as entidades **Alerta**, **Cultura**, **HistoricoClima** e **LeituraSatelital**.
+
+### 🌾 Evolução do Domínio — Telemetria Agrícola Completa
+
+O backend evoluiu além do cadastro de produtores e propriedades para suportar o ciclo completo de monitoramento agrícola. As novas entidades de domínio integram dados climáticos, leituras de satélite e alertas operacionais diretamente ao modelo relacional, permitindo rastreabilidade histórica e inteligência sobre as culturas monitoradas:
+
+- **`Alerta`** — Registra eventos críticos e notificações gerados pelo sistema de monitoramento
+- **`Cultura`** — Representa os tipos de cultura plantados em cada propriedade, com metadados agronômicos
+- **`HistoricoClima`** — Armazena séries temporais de dados climáticos associados a cada propriedade
+- **`LeituraSatelital`** — Persiste as leituras de telemetria captadas via satélite para análise e rastreabilidade
 
 ---
 
 ## 🚀 Tecnologias e Stack
 
 | Categoria | Tecnologia | Versão / Detalhe |
-|-----------|-----------|-----------------|
+|-----------|------------|-----------------|
 | **Linguagem** | C# | 12.0 |
 | **Framework** | ASP.NET Core | 8.0 (MVC com Controllers) |
 | **ORM** | Entity Framework Core | Code-First Migrations |
@@ -79,9 +88,17 @@ O backend adota o padrão **MVC (Model-View-Controller)** com separação clara 
 ```
 AstroFarm.Api/
 ├── Controllers/          # Camada de entrada HTTP (roteamento e validação de request)
+│   ├── AlertasController.cs
+│   ├── CulturasController.cs
+│   ├── HistoricoClimaController.cs
+│   ├── LeiturasSatelitalController.cs
 │   ├── ProdutoresController.cs
 │   └── PropriedadesController.cs
 ├── Models/               # Entidades de domínio (mapeadas pelo EF Core)
+│   ├── Alerta.cs
+│   ├── Cultura.cs
+│   ├── HistoricoClima.cs
+│   ├── LeituraSatelital.cs
 │   ├── Produtor.cs
 │   └── Propriedade.cs
 ├── Data/                 # Contexto do EF Core e configurações de banco
@@ -198,7 +215,7 @@ Gerencia as propriedades agrícolas vinculadas a um produtor. Suporta **CRUD com
 ### Pré-requisitos
 
 | Ferramenta | Versão Mínima | Link |
-|-----------|--------------|------|
+|------------|--------------|------|
 | Docker Desktop | 24.x | [docker.com](https://www.docker.com/products/docker-desktop/) |
 | Git | 2.x | [git-scm.com](https://git-scm.com/) |
 
@@ -260,7 +277,37 @@ docker compose ps
 
 ---
 
-### Passo 4 — Acessar a API
+### Passo 4 — Inicializar o Banco de Dados (Schema)
+
+⚠️ **Este passo é essencial.** O arquivo `scripts/init_banco.sql` foi **completamente atualizado** nesta versão para criar o schema completo do AstroFarm, incluindo as novas tabelas de telemetria agrícola: `Alertas`, `Culturas`, `HistoricoClima` e `LeiturasSatelital`. Executar este script é obrigatório para que a API funcione corretamente — sem ele, as rotas relacionadas às novas entidades retornarão erros de tabela não encontrada.
+
+Após os containers estarem rodando, acesse a pasta `scripts/` e execute o script de provisionamento:
+
+> **Nota:** O script utiliza as variáveis de ambiente do container, garantindo que nenhuma credencial fique exposta no comando.
+
+```bash
+# Acessar a pasta de scripts (a partir da raiz do repositório)
+cd scripts/
+
+# Copiar o script para dentro do container Oracle e executar
+docker cp init_banco.sql oracle-rm562012:/tmp/init_banco.sql
+docker exec -it oracle-rm562012 bash -c 'sqlplus $ORACLE_APP_USER/$ORACLE_APP_PASSWORD@FREEPDB1 @/tmp/init_banco.sql'
+```
+
+O script criará as seguintes tabelas no schema Oracle:
+
+| Tabela | Entidade | Descrição |
+|--------|----------|-----------|
+| `PRODUTORES` | `Produtor` | Cadastro dos produtores rurais |
+| `PROPRIEDADES` | `Propriedade` | Propriedades agrícolas vinculadas ao produtor |
+| `CULTURAS` | `Cultura` | Tipos de cultura por propriedade |
+| `HISTORICO_CLIMA` | `HistoricoClima` | Séries temporais de dados climáticos |
+| `LEITURAS_SATELITAL` | `LeituraSatelital` | Telemetria captada via satélite |
+| `ALERTAS` | `Alerta` | Eventos e notificações do sistema |
+
+---
+
+### Passo 5 — Acessar a API
 
 Após os containers estarem `healthy`, acesse:
 
@@ -287,6 +334,8 @@ docker compose down -v
 
 Todos os endpoints podem ser testados diretamente pelo **Swagger UI** em `http://localhost:8080/swagger`. Abaixo estão os payloads de referência para as principais operações.
 
+> 📡 **Nota sobre as novas entidades:** Com a expansão do domínio, o banco de dados agora suporta relacionamentos de telemetria entre `Propriedade`, `Cultura`, `HistoricoClima`, `LeituraSatelital` e `Alerta`. Os endpoints dessas entidades seguem o mesmo padrão REST (CRUD completo) documentado abaixo para `Propriedades`, e estão disponíveis para exploração interativa no Swagger UI após a execução do `init_banco.sql`.
+
 ---
 
 ### POST `/api/Produtores/Cadastro`
@@ -299,6 +348,7 @@ Registra um novo produtor na plataforma.
   "nome": "João da Silva",
   "cpf": "12345678900",
   "email": "joao.silva@astrofarm.com",
+  "senha": "SenhaForte123",
   "telefone": "11999999999",
   "estado": "SP",
   "cidade": "Ribeirão Preto"
@@ -310,9 +360,14 @@ Registra um novo produtor na plataforma.
 {
   "id": 1,
   "nome": "João da Silva",
-  "cpf": "123.456.789-00",
+  "cpf": "12345678900",
   "email": "joao.silva@astrofarm.com",
-  "dataCadastro": "2025-06-07T14:30:00Z"
+  "senha": "SenhaForte123",
+  "telefone": "11999999999",
+  "estado": "SP",
+  "cidade": "Ribeirão Preto",
+  "dtCadastro": "2026-05-31T16:40:49.3791974+00:00",
+  "propriedades": []
 }
 ```
 
@@ -320,12 +375,13 @@ Registra um novo produtor na plataforma.
 
 ### POST `/api/Produtores/Login`
 
-Autentica um produtor utilizando CPF.
+Autentica um produtor utilizando CPF e Senha.
 
 **Request Body:**
 ```json
 {
-  "cpf": "123.456.789-00"
+  "cpf": "12345678900",
+  "senha": "SenhaForte123"
 }
 ```
 
@@ -334,8 +390,14 @@ Autentica um produtor utilizando CPF.
 {
   "id": 1,
   "nome": "João da Silva",
+  "cpf": "12345678900",
   "email": "joao.silva@astrofarm.com",
-  "autenticado": true
+  "senha": "SenhaForte123",
+  "telefone": "11999999999",
+  "estado": "SP",
+  "cidade": "Ribeirão Preto",
+  "dtCadastro": "2026-05-31T16:40:49",
+  "propriedades": []
 }
 ```
 
@@ -355,10 +417,13 @@ Cadastra uma nova propriedade agrícola vinculada a um produtor.
 **Request Body:**
 ```json
 {
-  "nome": "Fazenda Esperança",
-  "localizacao": "Ribeirão Preto, SP",
-  "areaHectares": 450.75,
-  "tipoCultura": "Soja",
+  "nomeFazenda": "Fazenda São João",
+  "estado": "SP",
+  "municipio": "Ribeirão Preto",
+  "areaHectares": 1500.50,
+  "tipoCultura": "Milho e Soja",
+  "latitude": "-21.1704",
+  "longitude": "-47.8103",
   "produtorId": 1
 }
 ```
@@ -366,13 +431,16 @@ Cadastra uma nova propriedade agrícola vinculada a um produtor.
 **Response `201 Created`:**
 ```json
 {
-  "id": 10,
-  "nome": "Fazenda Esperança",
-  "localizacao": "Ribeirão Preto, SP",
-  "areaHectares": 450.75,
-  "tipoCultura": "Soja",
+  "id": 1,
   "produtorId": 1,
-  "dataCadastro": "2025-06-07T14:35:00Z"
+  "nomeFazenda": "Fazenda São João",
+  "areaHectares": 1500.5,
+  "latitude": -21.1704,
+  "longitude": -47.8103,
+  "estado": "SP",
+  "municipio": "Ribeirão Preto",
+  "dtRegistro": "2026-05-31T17:30:06.1857759+00:00",
+  "produtor": null
 }
 ```
 
@@ -384,12 +452,16 @@ Cadastra uma nova propriedade agrícola vinculada a um produtor.
 ```json
 [
   {
-    "id": 10,
-    "nome": "Fazenda Esperança",
-    "localizacao": "Ribeirão Preto, SP",
-    "areaHectares": 450.75,
-    "tipoCultura": "Soja",
-    "produtorId": 1
+    "id": 2,
+    "produtorId": 1,
+    "nomeFazenda": "Fazenda São João",
+    "areaHectares": 1500.5,
+    "latitude": -21.1704,
+    "longitude": -47.8103,
+    "estado": "SP",
+    "municipio": "Ribeirão Preto",
+    "dtRegistro": "2026-05-31T17:38:34",
+    "produtor": null
   }
 ]
 ```
@@ -467,11 +539,11 @@ http://<IP_PUBLICO_DA_VM>:8080/swagger
 
 ## 👥 Equipe
 
-| Nome | RM | GitHub                                             |
-|------|----|----------------------------------------------------|
-| **Gabriel Bebé Silva** | `562012` | [@Gabriel24701](https://github.com/Gabriel24701)   |
+| Nome | RM | GitHub |
+|------|----|--------|
+| **Gabriel Bebé Silva** | `562012` | [@Gabriel24701](https://github.com/Gabriel24701) |
 | **Emanuel Italo** | `561337` | [@Emanuel-italo](https://github.com/Emanuel-italo) |
-| **Paulo Estalise** | `563811` | [@phestalise](https://github.com/phestalise)       ||
+| **Paulo Estalise** | `563811` | [@phestalise](https://github.com/phestalise) |
 
 ---
 

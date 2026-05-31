@@ -11,7 +11,7 @@ namespace AstroFarm.Api.Models
         public int Id { get; set; }
 
         [Column("ID_PRODUTOR")]
-        public int IdProdutor { get; set; }   // ← renomeado para IdProdutor
+        public int IdProdutor { get; set; }
 
         [Required]
         [Column("NOME_FAZENDA")]
