@@ -11,7 +11,7 @@ namespace AstroFarm.Api.Models
         public int Id { get; set; }
 
         [Column("ID_PRODUTOR")]
-        public int ProdutorId { get; set; }
+        public int IdProdutor { get; set; }   // ← renomeado para IdProdutor
 
         [Required]
         [Column("NOME_FAZENDA")]
@@ -38,7 +38,12 @@ namespace AstroFarm.Api.Models
         [Column("DT_REGISTRO")]
         public DateTime DtRegistro { get; set; } = DateTime.Now;
 
-        [ForeignKey("ProdutorId")]
+// Relacionamentos
+        [ForeignKey("IdProdutor")]
         public Produtor? Produtor { get; set; }
+
+        public ICollection<Cultura> Culturas { get; set; } = new List<Cultura>();
+        public ICollection<LeituraSatelital> Leituras { get; set; } = new List<LeituraSatelital>();
+        public ICollection<Alerta> Alertas { get; set; } = new List<Alerta>();
     }
 }

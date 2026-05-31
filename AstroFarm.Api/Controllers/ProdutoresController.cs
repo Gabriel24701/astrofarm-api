@@ -18,7 +18,7 @@ namespace AstroFarm.Api.Controllers
 
         // POST: api/Produtores/Cadastro
         [HttpPost("Cadastro")]
-        public async Task<ActionResult<Produtor>> Cadastrar(Produtor produtor)
+        public async Task<ActionResult<Produtor>> Cadastrar([FromBody] Produtor produtor)
         {
             if (await _context.Produtores.AnyAsync(p => p.Cpf == produtor.Cpf))
             {
@@ -29,25 +29,25 @@ namespace AstroFarm.Api.Controllers
             _context.Produtores.Add(produtor);
             await _context.SaveChangesAsync();
 
-            // Retorna 201 Created
             return CreatedAtAction(nameof(GetProdutor), new { id = produtor.Id }, produtor);
         }
 
         // POST: api/Produtores/Login
         [HttpPost("Login")]
-        public async Task<ActionResult<Produtor>> Login([FromBody] string cpf)
+        public async Task<IActionResult> Login([FromBody] LoginRequest dadosLogin)
         {
-            var produtor = await _context.Produtores.FirstOrDefaultAsync(p => p.Cpf == cpf);
+            var produtor = await _context.Produtores
+                .FirstOrDefaultAsync(p => p.Cpf == dadosLogin.Cpf && p.Senha == dadosLogin.Senha);
 
             if (produtor == null)
             {
-                return Unauthorized("Produtor não encontrado. Verifique o CPF.");
+                return Unauthorized(new { mensagem = "CPF ou senha inválidos." });
             }
 
             return Ok(produtor);
         }
 
-        // GET: api/Produtores/5 (Usado internamente pelo Cadastro para retornar os dados)
+        // GET: api/Produtores/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Produtor>> GetProdutor(int id)
         {
@@ -58,7 +58,13 @@ namespace AstroFarm.Api.Controllers
                 return NotFound();
             }
 
-            return produtor;
+            return Ok(produtor);
         }
+    }
+
+    public class LoginRequest
+    {
+        public string Cpf { get; set; }
+        public string Senha { get; set; }
     }
 }

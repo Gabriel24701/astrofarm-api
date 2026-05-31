@@ -21,6 +21,9 @@ namespace AstroFarm.Api.Models
         [Column("EMAIL")]
         public string? Email { get; set; }
 
+        [Column("SENHA")]
+        public string? Senha { get; set; }
+
         [Column("TELEFONE")]
         public string? Telefone { get; set; }
 
@@ -34,7 +37,8 @@ namespace AstroFarm.Api.Models
 
         [Column("DT_CADASTRO")]
         public DateTime DtCadastro { get; set; } = DateTime.Now;
-        
-        public ICollection<Propriedade> Propriedades { get; set; } = new List<Propriedade>();
+
+        public ICollection<Propriedade> Propriedades { get; set; }
+            = new List<Propriedade>();
     }
 }
