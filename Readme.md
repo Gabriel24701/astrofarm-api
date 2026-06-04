@@ -89,8 +89,6 @@ O backend adota o padrão **MVC (Model-View-Controller)** com separação clara 
 AstroFarm.Api/
 ├── Controllers/          # Camada de entrada HTTP (roteamento e validação de request)
 │   ├── AlertasController.cs
-│   ├── CulturasController.cs
-│   ├── HistoricoClimaController.cs
 │   ├── LeiturasSatelitalController.cs
 │   ├── ProdutoresController.cs
 │   └── PropriedadesController.cs
@@ -99,6 +97,7 @@ AstroFarm.Api/
 │   ├── Cultura.cs
 │   ├── HistoricoClima.cs
 │   ├── LeituraSatelital.cs
+│   ├── LeituraDTO.cs
 │   ├── Produtor.cs
 │   └── Propriedade.cs
 ├── Data/                 # Contexto do EF Core e configurações de banco
@@ -189,11 +188,12 @@ Isso garante que o schema do Oracle esteja sempre sincronizado com o código, se
 
 Gerencia o ciclo de vida de autenticação dos produtores rurais. O identificador único de negócio é o **CPF**.
 
-| Método | Rota | Descrição | Auth |
-|--------|------|-----------|------|
-| `POST` | `/api/Produtores/Cadastro` | Registra um novo produtor | ❌ Público |
-| `POST` | `/api/Produtores/Login` | Autentica um produtor via CPF e senha | ❌ Público |
-
+| Método | Rota                      | Descrição                             | Auth |
+|--------|---------------------------|---------------------------------------|------|
+| `POST` | `/api/Produtores/Cadastro` | Registra um novo produtor             | ❌ Público |
+| `POST` | `/api/Produtores/Login`   | Autentica um produtor via CPF e senha | ❌ Público |
+| `GET` | `/api/Produtores/{id}`    | Retorna um produtor pelo ID          | ✅ |
+| `PUT` | `/api/Produtores/{id}`    | Atualiza dados de uma propriedade     | ✅ |
 ---
 
 ### Entidade: `Propriedades`
@@ -209,6 +209,28 @@ Gerencia as propriedades agrícolas vinculadas a um produtor. Suporta **CRUD com
 | `DELETE` | `/api/Propriedades/{id}` | Remove uma propriedade | ✅ |
 
 ---
+
+### Entidade: `LeiturasSatelitais`
+
+Gerencia o histórico de dados de telemetria captados via satélite (NDVI, umidade, temperatura) para uma propriedade.
+
+| Método | Rota                                  | Descrição | Auth |
+|--------|---------------------------------------|-----------|------|
+| `GET` | `/api/Leituras`                       | Lista todas as leituras de telemetria | ✅ |
+| `GET` | `/api/Leituras/ultima/{propiedadeId}` | Retorna uma leitura específica pelo ID | ✅ |
+| `GET` | `/api/Leituras/dashboard`            | Retorna uma leitura específica pelo ID | ✅ |
+| `POST` | `/api/Leituras`             | Registra uma nova leitura de satélite | ✅ |
+
+---
+
+### Entidade: `Alertas`
+
+Responsável por registrar notificações e eventos críticos gerados a partir da análise climática e de telemetria.
+
+| Método | Rota | Descrição | Auth |
+|--------|------|-----------|------|
+| `GET` | `/api/Alertas` | Lista todos os alertas gerados | ✅ |
+| `PUT` | `/api/Alertas/{id}` | Atualiza o status de um alerta (ex: resolvido) | ✅ |
 
 ## 🛠️ Execução Local com Docker
 
@@ -448,6 +470,8 @@ Cadastra uma nova propriedade agrícola vinculada a um produtor.
 
 ### GET `/api/Propriedades`
 
+Lista todas as propriedades cadastradas.
+
 **Response `200 OK`:**
 ```json
 [
@@ -499,6 +523,69 @@ Remove uma propriedade pelo ID.
   "mensagem": "Propriedade com ID 99 não encontrada."
 }
 ```
+
+---
+
+### POST `/api/Leituras`
+
+Registra uma nova leitura de telemetria captada via satélite.
+
+**Request Body:**
+```json
+{
+  "idPropriedade": 1,
+  "ndvi": 0.75,
+  "temperatura": 28.5,
+  "umidade": 60.2,
+  "precipitacao": 12.0,
+  "fonteSatelite": "Sentinel-2"
+}
+```
+
+**Response `201 Created`:**
+```json
+{
+  "id": 1,
+  "idPropriedade": 1,
+  "dtLeitura": "2026-06-04T15:30:00.000Z",
+  "ndvi": 0.75,
+  "temperatura": 28.5,
+  "umidade": 60.2,
+  "precipitacao": 12.0,
+  "fonteSatelite": "Sentinel-2"
+}
+```
+
+---
+
+### GET `/api/Alertas`
+
+Lista todos os alertas operacionais gerados pelo sistema.
+
+**Response `200 OK`:**
+```json
+[
+  {
+    "id": 1,
+    "idPropriedade": 1,
+    "idLeitura": 1,
+    "tipoAlerta": "Estresse Hídrico",
+    "nivelRisco": "Alto",
+    "descricao": "Umidade crítica detectada na propriedade.",
+    "dtAlerta": "2026-06-04T15:30:00.000Z",
+    "resolvido": false,
+    "dtResolucao": null
+  }
+]
+```
+
+---
+
+### PUT `/api/Alertas/{id}`
+
+Atualiza o status de um alerta, geralmente utilizado pelo aplicativo para marcar uma notificação como "Resolvida".
+
+**Response `204 No Content`** *(sem body)*
 
 ---
 
