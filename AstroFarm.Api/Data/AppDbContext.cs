@@ -21,8 +21,6 @@ namespace AstroFarm.Api.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.HasDefaultSchema("RM563811");
-
             modelBuilder.Entity<Produtor>(entity =>
             {
                 entity.ToTable("PRODUTOR");
@@ -33,13 +31,38 @@ namespace AstroFarm.Api.Data
                     .HasColumnName("ID_PRODUTOR")
                     .ValueGeneratedOnAdd();
 
-                entity.Property(e => e.Nome).HasColumnName("NOME");
-                entity.Property(e => e.Cpf).HasColumnName("CPF");
-                entity.Property(e => e.Email).HasColumnName("EMAIL");
-                entity.Property(e => e.Telefone).HasColumnName("TELEFONE");
-                entity.Property(e => e.Estado).HasColumnName("ESTADO");
-                entity.Property(e => e.Cidade).HasColumnName("CIDADE");
-                entity.Property(e => e.DtCadastro).HasColumnName("DT_CADASTRO");
+                entity.Property(e => e.Nome)
+                    .HasColumnName("NOME")
+                    .IsRequired();
+
+                entity.Property(e => e.Cpf)
+                    .HasColumnName("CPF")
+                    .IsRequired();
+
+                entity.Property(e => e.Email)
+                    .HasColumnName("EMAIL")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Senha)
+                    .HasColumnName("SENHA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Telefone)
+                    .HasColumnName("TELEFONE")
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.Estado)
+                    .HasColumnName("ESTADO")
+                    .IsRequired()
+                    .HasMaxLength(2);
+
+                entity.Property(e => e.Cidade)
+                    .HasColumnName("CIDADE")
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.DtCadastro)
+                    .HasColumnName("DT_CADASTRO");
             });
 
             modelBuilder.Entity<Propriedade>(entity =>
