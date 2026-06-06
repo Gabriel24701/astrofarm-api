@@ -6,11 +6,11 @@
 
 ## 🎬 Links do Projeto
 
-| Recurso | Link |
-|---------|------|
-| 📹 **Vídeo Pitch** (máx. 3 min) | [▶ Assistir no YouTube](#) *(placeholder)* |
-| 🎥 **Vídeo Demonstração** (máx. 8 min) | [▶ Assistir no YouTube](#) *(placeholder)* |
-| 📦 **Repositório** | [github.com/Gabriel24701/astrofarm-api](https://github.com/Gabriel24701/astrofarm-api.git) |
+| Recurso                                 | Link                                                                                                              |
+|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| 📹 **Vídeo Pitch** (máx. 3 min)         | [▶ Assistir no YouTube](https://www.youtube.com/watch?v=wv8dH6bTf9o)                                                                        |
+| 🎥 **Vídeo Demonstração** (máx. 15 min) | [▶ Assistir no YouTube](https://www.youtube.com/watch?v=XLG9mL4ca3g)                                              |
+| 📦 **Repositório**                      | [Repositório Github](https://github.com/Gabriel24701/astrofarm-api.git)                                           |
 
 ---
 
